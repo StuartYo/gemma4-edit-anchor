@@ -155,6 +155,7 @@ def common(out, logs, tasks):
     out["server_errors"] = sum(l.get("server_errors", 0) for l in logs)
     out["stopped_without_edit_first"] = sum(1 for l in logs if l.get("stopped_without_edit_first"))
     out["nudged"] = sum(1 for l in logs if l.get("nudges"))
+    out["context_overflow"] = sum(1 for l in logs if l.get("context_overflow"))
 
 def main():
     ap = argparse.ArgumentParser()

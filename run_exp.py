@@ -183,6 +183,10 @@ def run_task(t, args):
                 resp = chat(args.port, msgs, args.seed * 1000 + turn * 10 + attempt, tools=TOOLS_L if L else TOOLS)
                 break
             except urllib.error.HTTPError as ex:
+                if ex.code == 400:  # request too long for the context window: end the episode
+                    log["context_overflow"] = True
+                    log["error"] = ex.read().decode("utf-8", "replace")[:300]
+                    break
                 if ex.code != 500:  # 503 loading etc.: not the model's fault, wait and retry
                     time.sleep(5); wait_ready(args.port); continue
                 body = ex.read().decode("utf-8", "replace")
