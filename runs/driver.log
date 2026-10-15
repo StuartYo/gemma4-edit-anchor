@@ -60,3 +60,10 @@ Traceback (most recent call last):
     return self._sock.recv_into(b)
            ^^^^^^^^^^^^^^^^^^^^^^^
 ConnectionResetError: [WinError 10054] 遠端主機已強制關閉一個現存的連線。
+13:09 restart driver (all batches, resumable)
+13:14 lock acquired
+13:31 done E2B dev100 target N
+13:33 done E2B dev100 target RN
+13:44 done E2B dev100 target S
+13:44 lock released
+13:44 batch 0 done

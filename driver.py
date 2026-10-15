@@ -67,6 +67,9 @@ BATCHES = [
     ("E4B", [("dev100", "target", "S", H1), ("dev100", "target", "RN", H1), ("holdout60", "target", "RN")]),
     ("E4B", [("dev100", "intent", "S", H0), ("dev100", "intent", "S", H1), ("dev100", "target", "N", H0)]),
     ("E4B", [("dev100", "target", "N", H1), ("dev100", "target", "R", H0), ("dev100", "target", "R", H1)]),
+    # 7-10: line-range interface with first-line anchor check (condition L), added after the E2B dev results
+    ("E2B", [("dev100", "target", "L", H0), ("dev100", "target", "L", H1), ("holdout60", "target", "L")]),
+    ("E4B", [("dev100", "target", "L", H0), ("dev100", "target", "L", H1), ("holdout60", "target", "L")]),
 ]
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 usage: python score.py runs/*.jsonl --tasks data/dev.jsonl data/holdout.jsonl --out results/summary.json
 """
-import argparse, glob, json, random, re
+import argparse, difflib, glob, json, random, re
 from collections import Counter, defaultdict
 import appliers as A
 from run_exp import norm
@@ -49,8 +49,37 @@ def boot_ci(xs, n=2000, seed=0):
     ms = sorted(sum(rng.choice(xs) for _ in xs) / len(xs) for _ in range(n))
     return (round(ms[int(0.025 * n)], 3), round(ms[int(0.975 * n)], 3))
 
+def line_ratio(x, y):
+    return difflib.SequenceMatcher(None, x.splitlines(), y.splitlines(), autojunk=False).ratio()
+
+def outcome(l, t):
+    applied = any(c.get("applied") for c in l["calls"])
+    if l.get("solved"):
+        return "solved"
+    return "applied_not_solved" if applied else "never_applied"
+
+def summarize_L(logs, tasks):
+    n = len(logs)
+    out = {"n": n}
+    eds = [[c for c in l["calls"] if c["name"] == "edit_lines" and "lines" in c] for l in logs]
+    out["no_edit_call"] = sum(1 for e in eds if not e)
+    out["first_strict_ok"] = sum(1 for e in eds if e and e[0].get("applied"))
+    out["edit_calls"] = sum(len(e) for e in eds)
+    out["failed_edit_calls"] = sum(1 for e in eds for c in e if not c.get("applied"))
+    out["all_fail_taxonomy"] = dict(Counter(c["info"].get("error") for e in eds for c in e if not c.get("applied")))
+    wrong = 0
+    for l, e in zip(logs, eds):
+        if e and e[0].get("applied") and not overlaps(tuple(e[0]["info"]["span"]), l["gold_spans"]):
+            wrong += 1
+    out["first_applied_wrong_place"] = wrong
+    return out
+
 def summarize(logs, tasks):
     n = len(logs)
+    if logs and logs[0]["cond"] == "L":
+        out = summarize_L(logs, tasks)
+        common(out, logs, tasks)
+        return out
     out = {"n": n}
     fe = [first_edit(l) for l in logs]
     has = [f for f in fe if f is not None]
@@ -79,6 +108,12 @@ def summarize(logs, tasks):
                 if info.get("how") != "exact":
                     replay[name]["repaired"] += 1
                     replay[name]["repaired_wrong_place" if not ok_loc else "repaired_right_place"] += 1
+                    if l["mode"] == "target":
+                        # did the repaired edit move the file toward or away from the gold file?
+                        if line_ratio(r, t["after"]) < line_ratio(text, t["after"]):
+                            replay[name]["repaired_moved_away_from_gold"] += 1
+                        if t["n_hunks"] == 1 and norm(r) == norm(t["after"]):
+                            replay[name]["repaired_exact_fix"] += 1
     out["first_fail_taxonomy"] = dict(tax)
     # taxonomy over every failed edit call (state saved at call time)
     allt = Counter()
@@ -98,20 +133,28 @@ def summarize(logs, tasks):
     out["arg_parse_errors"] = sum(l.get("parse_errors", 0) for l in logs)
     out["tasks_with_parse_error"] = sum(1 for l in logs if l.get("parse_errors"))
     out["replay_first_call"] = {k: dict(v) for k, v in replay.items()}
+    common(out, logs, tasks)
+    return out
+
+def common(out, logs, tasks):
+    n = len(logs)
+    out["arg_parse_errors"] = sum(l.get("parse_errors", 0) for l in logs)
+    out["tasks_with_parse_error"] = sum(1 for l in logs if l.get("parse_errors"))
     if logs and logs[0]["mode"] == "target":
+        out["outcome"] = dict(Counter(outcome(l, tasks[l["id"]]) for l in logs))
         solved = [1 if l.get("solved") else 0 for l in logs]
         out["solved"] = sum(solved)
         out["solved_rate"] = round(sum(solved) / n, 3)
         out["solved_ci95"] = boot_ci(solved)
     out["changed"] = sum(1 for l in logs if l["changed"])
-    out["edit_calls"] = sum(1 for l in logs for c in l["calls"] if c["name"] == "edit_file")
-    out["failed_edit_calls"] = sum(1 for l in logs for c in l["calls"] if c["name"] == "edit_file" and not c.get("applied"))
+    if logs and logs[0]["cond"] != "L":
+        out["edit_calls"] = sum(1 for l in logs for c in l["calls"] if c["name"] == "edit_file")
+        out["failed_edit_calls"] = sum(1 for l in logs for c in l["calls"] if c["name"] == "edit_file" and not c.get("applied"))
     out["mean_secs"] = round(sum(l["secs"] for l in logs) / max(1, n), 1)
     out["mean_completion_tokens"] = round(sum(l["completion_tokens"] for l in logs) / max(1, n), 1)
     out["server_errors"] = sum(l.get("server_errors", 0) for l in logs)
     out["stopped_without_edit_first"] = sum(1 for l in logs if l.get("stopped_without_edit_first"))
     out["nudged"] = sum(1 for l in logs if l.get("nudges"))
-    return out
 
 def main():
     ap = argparse.ArgumentParser()

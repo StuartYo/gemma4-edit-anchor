@@ -46,6 +46,50 @@ TOOLS = [
             "required": ["filepath", "old_string", "new_string"]}}},
 ]
 
+SYSTEM_L = (
+    "You are a software engineering agent working in a Python repository at /workspace. "
+    "Use the tools to make the requested change. edit_lines replaces a range of lines, using the "
+    "line numbers shown by read_file. expected_first_line must be the current text of start_line, "
+    "copied from read_file without the number; the edit is rejected if it does not match. "
+    "Do not include line numbers in new_content. When the change is complete, reply with a short "
+    "summary and no tool call."
+)
+TOOLS_L = [TOOLS[0], {"type": "function", "function": {
+    "name": "edit_lines",
+    "description": "Replaces lines start_line..end_line (1-indexed, inclusive, as numbered by read_file) with new_content. Use end_line = start_line - 1 to insert before start_line.",
+    "parameters": {"type": "object", "properties": {
+        "filepath": {"type": "string"},
+        "start_line": {"type": "integer"},
+        "end_line": {"type": "integer"},
+        "expected_first_line": {"type": "string"},
+        "new_content": {"type": "string"}},
+        "required": ["filepath", "start_line", "end_line", "expected_first_line", "new_content"]}}}]
+
+def apply_lines(text, start, end, expected, new):
+    """Location-anchored edit with a content check on the first line (anchor-and-verify)."""
+    lines = text.split("\n")
+    trail = text.endswith("\n")
+    if trail:
+        lines = lines[:-1]
+    n = len(lines)
+    try:
+        start, end = int(start), int(end)
+    except Exception:
+        return None, {"error": "bad_range"}
+    if not (1 <= start <= n + 1 and start - 1 <= end <= n):
+        return None, {"error": "bad_range", "n": n}
+    exp, _ = A.strip_lineno(expected or "")
+    exp = exp.split("\n")[0].strip()
+    cur = lines[start - 1].strip() if start <= n else ""
+    if exp != cur:
+        return None, {"error": "anchor_mismatch"}
+    new, _ = A.strip_lineno(new or "")
+    nl = new.split("\n") if new != "" else []
+    if nl and nl[-1] == "" and new.endswith("\n"):
+        nl = nl[:-1]
+    out = lines[:start - 1] + nl + lines[end:]
+    return "\n".join(out) + ("\n" if trail else ""), {"span": (start - 1, max(end, start)), "how": "lines"}
+
 def numbered(text, start=1, end=None):
     lines = text.split("\n")
     if text.endswith("\n"):
@@ -69,8 +113,8 @@ def gold_regions(before, after):
 def norm(t):
     return "\n".join(l.rstrip() for l in t.strip("\n").split("\n"))
 
-def chat(port, messages, seed, max_tokens=2048):
-    body = {"messages": messages, "tools": TOOLS, "temperature": 1.0, "top_p": 0.95,
+def chat(port, messages, seed, max_tokens=2048, tools=None):
+    body = {"messages": messages, "tools": tools or TOOLS, "temperature": 1.0, "top_p": 0.95,
             "top_k": 64, "seed": seed, "max_tokens": max_tokens,
             "chat_template_kwargs": {"enable_thinking": False}}
     req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/chat/completions",
@@ -117,8 +161,9 @@ def run_task(t, args):
                 "Change only what is needed to make these blocks appear.")
     else:
         task = f"Make this change in {path} (commit message): {t['subject']}"
+    L = args.cond == "L"
     msgs = [
-        {"role": "system", "content": SYSTEM},
+        {"role": "system", "content": SYSTEM_L if L else SYSTEM},
         {"role": "user", "content": task},
         {"role": "assistant", "content": "", "tool_calls": [{"id": "c0", "type": "function",
             "function": {"name": "read_file", "arguments": json.dumps({"filepath": path})}}]},
@@ -135,7 +180,7 @@ def run_task(t, args):
         attempt = 0
         while attempt < 3:
             try:
-                resp = chat(args.port, msgs, args.seed * 1000 + turn * 10 + attempt)
+                resp = chat(args.port, msgs, args.seed * 1000 + turn * 10 + attempt, tools=TOOLS_L if L else TOOLS)
                 break
             except urllib.error.HTTPError as ex:
                 if ex.code != 500:  # 503 loading etc.: not the model's fault, wait and retry
@@ -164,7 +209,7 @@ def run_task(t, args):
                 log["nudges"] = log.get("nudges", 0) + 1
                 if n_edit == 0:
                     log["stopped_without_edit_first"] = True
-                msgs.append({"role": "user", "content": "You have not changed the file yet. Make the change now by calling edit_file."})
+                msgs.append({"role": "user", "content": "You have not changed the file yet. Make the change now by calling " + ("edit_lines." if L else "edit_file.")})
                 continue
             break
         for tc in tcs:
@@ -189,6 +234,24 @@ def run_task(t, args):
                 rec["applied"] = res is not None
                 rec["state_hash"] = hash(before_text)
                 rec["before_call"] = before_text if not rec["applied"] or args.keep_states else None
+            elif L and name == "edit_lines" and isinstance(a, dict) and "start_line" in a and "new_content" in a:
+                n_edit += 1
+                before_text = text
+                res, info = apply_lines(text, a.get("start_line"), a.get("end_line", a.get("start_line")),
+                                        a.get("expected_first_line", ""), a.get("new_content", ""))
+                rec.update({"lines": [a.get("start_line"), a.get("end_line")],
+                            "expected": a.get("expected_first_line"), "new": a.get("new_content"), "info": info})
+                if res is not None:
+                    text = res
+                    out = "File edited successfully."
+                elif info.get("error") == "anchor_mismatch":
+                    st = int(a.get("start_line"))
+                    out = ("Error: expected_first_line does not match line %d. Current lines:\n" % st) + \
+                          numbered(before_text, max(1, st - 2), st + 4)
+                else:
+                    out = "Error: start_line/end_line out of range (file has %s lines)." % info.get("n", "?")
+                rec["applied"] = res is not None
+                rec["before_call"] = before_text if not rec["applied"] else None
             elif name == "read_file" and isinstance(a, dict):
                 out = numbered(text, a.get("start_line") or 1, a.get("end_line"))
             else:
