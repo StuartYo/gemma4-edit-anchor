@@ -5,6 +5,7 @@ usage: python score.py runs/*.jsonl --tasks data/dev.jsonl data/holdout.jsonl --
 import argparse, glob, json, random
 from collections import Counter, defaultdict
 import appliers as A
+from run_exp import norm
 
 def first_edit(log):
     for c in log["calls"]:
@@ -114,6 +115,8 @@ def main():
     files = sorted({f for p in a.runs for f in glob.glob(p)})
     for f in files:
         logs = [json.loads(l) for l in open(f, encoding="utf-8")]
+        # tasks whose commit only changed trailing whitespace are not edit tasks; excluded
+        logs = [l for l in logs if norm(tasks[l["id"]]["before"]) != norm(tasks[l["id"]]["after"])]
         res[f.replace("\\", "/").split("/")[-1].replace(".jsonl", "")] = summarize(logs, tasks)
     s = json.dumps(res, indent=1, ensure_ascii=False)
     if a.out:
