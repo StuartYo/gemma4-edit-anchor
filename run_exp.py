@@ -158,6 +158,14 @@ def run_task(t, args):
                     else {"role": "assistant", "content": m.get("content") or ""})
         if not tcs:
             log["final_msg"] = (m.get("content") or "")[:300]
+            applied_any = any(c.get("applied") for c in log["calls"])
+            if not applied_any and log.get("nudges", 0) < 1:
+                # one uniform nudge, like a harness that rejects a turn with no action
+                log["nudges"] = log.get("nudges", 0) + 1
+                if n_edit == 0:
+                    log["stopped_without_edit_first"] = True
+                msgs.append({"role": "user", "content": "You have not changed the file yet. Make the change now by calling edit_file."})
+                continue
             break
         for tc in tcs:
             name = tc["function"]["name"]
