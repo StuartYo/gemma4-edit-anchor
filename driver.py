@@ -16,7 +16,7 @@ def server(model):
     time.sleep(3)
     log = open(r"E:\_tmp_claude\gemma4paper\server.log", "w")
     p = subprocess.Popen([LL, "-m", GGUF[model], "--port", str(PORT), "-c", "49152", "-ngl", "99", "-t", "4",
-                          "--jinja", "--no-webui", "-np", "3"], stdout=log, stderr=log,
+                          "--jinja", "--no-webui", "-np", "3", "--cache-ram", "512"], stdout=log, stderr=log,
                          creationflags=0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
     run_exp.wait_ready(PORT)
     return p
