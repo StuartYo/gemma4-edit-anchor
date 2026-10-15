@@ -39,6 +39,7 @@
     "repaired": 6,
     "repaired_right_place": 5,
     "rejected": 35,
+    "repaired_moved_away_from_gold": 3,
     "repaired_wrong_place": 1
    },
    "ws": {
@@ -47,8 +48,10 @@
     "applied_right_place": 59,
     "repaired": 16,
     "repaired_right_place": 15,
+    "repaired_moved_away_from_gold": 8,
     "rejected": 25,
-    "repaired_wrong_place": 1
+    "repaired_wrong_place": 1,
+    "repaired_exact_fix": 3
    },
    "fuzzy": {
     "applied": 81,
@@ -56,9 +59,16 @@
     "applied_right_place": 75,
     "repaired": 32,
     "repaired_right_place": 31,
+    "repaired_moved_away_from_gold": 16,
+    "repaired_exact_fix": 9,
     "rejected": 9,
     "repaired_wrong_place": 1
    }
+  },
+  "outcome": {
+   "applied_not_solved": 50,
+   "never_applied": 35,
+   "solved": 13
   },
   "solved": 13,
   "solved_rate": 0.133,
@@ -112,7 +122,8 @@
     "repaired_right_place": 6,
     "rejected": 39,
     "applied_wrong_place": 3,
-    "repaired_wrong_place": 1
+    "repaired_wrong_place": 1,
+    "repaired_moved_away_from_gold": 2
    },
    "ws": {
     "applied": 59,
@@ -121,17 +132,26 @@
     "repaired_right_place": 14,
     "rejected": 31,
     "applied_wrong_place": 3,
-    "repaired_wrong_place": 1
+    "repaired_wrong_place": 1,
+    "repaired_moved_away_from_gold": 4,
+    "repaired_exact_fix": 2
    },
    "fuzzy": {
     "applied": 79,
     "applied_right_place": 75,
     "repaired": 35,
     "repaired_right_place": 33,
+    "repaired_moved_away_from_gold": 15,
     "applied_wrong_place": 4,
     "repaired_wrong_place": 2,
+    "repaired_exact_fix": 8,
     "rejected": 11
    }
+  },
+  "outcome": {
+   "applied_not_solved": 57,
+   "solved": 16,
+   "never_applied": 25
   },
   "solved": 16,
   "solved_rate": 0.163,
@@ -185,24 +205,34 @@
     "applied": 49,
     "applied_right_place": 49,
     "repaired": 7,
-    "repaired_right_place": 7
+    "repaired_right_place": 7,
+    "repaired_moved_away_from_gold": 3
    },
    "ws": {
     "rejected": 38,
     "applied": 54,
     "applied_right_place": 54,
     "repaired": 12,
-    "repaired_right_place": 12
+    "repaired_right_place": 12,
+    "repaired_moved_away_from_gold": 4,
+    "repaired_exact_fix": 1
    },
    "fuzzy": {
     "applied": 81,
     "applied_right_place": 78,
     "repaired": 39,
     "repaired_right_place": 36,
+    "repaired_moved_away_from_gold": 20,
+    "repaired_exact_fix": 7,
     "rejected": 11,
     "applied_wrong_place": 3,
     "repaired_wrong_place": 3
    }
+  },
+  "outcome": {
+   "applied_not_solved": 44,
+   "never_applied": 34,
+   "solved": 20
   },
   "solved": 20,
   "solved_rate": 0.204,

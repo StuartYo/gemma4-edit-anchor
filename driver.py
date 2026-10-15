@@ -70,6 +70,8 @@ BATCHES = [
     # 7-10: line-range interface with first-line anchor check (condition L), added after the E2B dev results
     ("E2B", [("dev100", "target", "L", H0), ("dev100", "target", "L", H1), ("holdout60", "target", "L")]),
     ("E4B", [("dev100", "target", "L", H0), ("dev100", "target", "L", H1), ("holdout60", "target", "L")]),
+    # 9: noise floor, a second sampling seed of the baseline
+    ("E2B", [("dev100", "target", "S", H0, 2), ("dev100", "target", "S", H1, 2), ("dev100", "target", "L", None, 2)]),
 ]
 
 if __name__ == "__main__":
