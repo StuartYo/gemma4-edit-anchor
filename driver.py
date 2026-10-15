@@ -34,19 +34,47 @@ def job(model, split, mode, cond, seed=1):
             f.write(json.dumps(run_exp.run_task(t, args), ensure_ascii=False) + "\n"); f.flush()
     print(time.strftime("%H:%M"), "done", model, split, mode, cond, flush=True)
 
-QUEUE = {
-    "E2B": [("dev100", "target", "S"), ("dev100", "target", "RN"), ("dev100", "target", "N"),
-            ("dev100", "target", "R"), ("holdout60", "target", "S"), ("holdout60", "target", "RN"),
-            ("dev100", "intent", "S")],
-    "E4B": [("dev100", "target", "S"), ("dev100", "target", "RN"), ("holdout60", "target", "S"),
-            ("holdout60", "target", "RN"), ("dev100", "intent", "S"), ("dev100", "target", "N"),
-            ("dev100", "target", "R")],
-}
+LOCK = Path("E:/_tmp_claude/render.lock")
+
+def acquire():
+    while True:
+        try:
+            with open(LOCK, "x", encoding="utf-8") as f:
+                f.write(f"Claude Gemma4論文 session {time.strftime('%Y-%m-%d %H:%M:%S')} llama-server Gemma4 batch")
+            print(time.strftime("%H:%M"), "lock acquired", flush=True)
+            return
+        except FileExistsError:
+            time.sleep(60)
+
+def release():
+    try:
+        LOCK.unlink()
+    except FileNotFoundError:
+        pass
+    print(time.strftime("%H:%M"), "lock released", flush=True)
+
+BATCHES = [
+    ("E2B", [("dev100", "target", "S"), ("dev100", "target", "RN"), ("dev100", "target", "N")]),
+    ("E2B", [("dev100", "target", "R"), ("holdout60", "target", "S"), ("holdout60", "target", "RN"), ("dev100", "intent", "S")]),
+    ("E4B", [("dev100", "target", "S"), ("dev100", "target", "RN"), ("holdout60", "target", "S")]),
+    ("E4B", [("holdout60", "target", "RN"), ("dev100", "intent", "S"), ("dev100", "target", "N")]),
+    ("E4B", [("dev100", "target", "R")]),
+]
+
 if __name__ == "__main__":
-    models = sys.argv[1:] or ["E2B", "E4B"]
-    for m in models:
-        p = server(m)
-        with ThreadPoolExecutor(3) as ex:
-            list(ex.map(lambda j: job(m, *j), QUEUE[m]))
-        p.kill()
+    which = [int(x) for x in sys.argv[1:]] or list(range(len(BATCHES)))
+    for i in which:
+        m, jobs = BATCHES[i]
+        acquire()
+        try:
+            p = server(m)
+            with ThreadPoolExecutor(3) as ex:
+                list(ex.map(lambda j: job(m, *j), jobs))
+            p.kill()
+            subprocess.run(["powershell", "-NoProfile", "-Command",
+                            "Get-Process llama-server -ErrorAction SilentlyContinue | Stop-Process -Force"])
+        finally:
+            release()
+        print(time.strftime("%H:%M"), "batch", i, "done", flush=True)
+        time.sleep(90)  # let anyone waiting on the lock take it
     print("ALLDONE", flush=True)
