@@ -48,7 +48,7 @@ def fig1():
     fig.tight_layout(); fig.savefig(OUT / "fig1_solved_by_condition.png", dpi=200); plt.close(fig)
 
 # Fig 2: why strict edit calls fail (all failed calls, condition S, dev)
-LABELS = {"line_numbers_copied": "Copied line numbers", "whitespace_or_indent": "Whitespace / indentation only",
+LABELS = {"line_numbers_copied": "Copied line numbers", "whitespace_or_indent": "Whitespace / indentation only", "quoted_the_target": "Quoted the edited version",
           "near_miss": "Near miss (similarity >= 0.9)", "partial_paraphrase": "Partly rewritten (0.6-0.9)",
           "not_in_file": "Not in file (< 0.6)", "not_unique": "Matches more than once", "empty_old": "Empty old_string"}
 def fig2():

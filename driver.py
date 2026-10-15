@@ -21,9 +21,14 @@ def server(model):
     run_exp.wait_ready(PORT)
     return p
 
-def job(model, split, mode, cond, seed=1):
-    out = Path(f"runs/{model}_{split}_{mode}_{cond}_s{seed}.jsonl")
+def job(model, split, mode, cond, part=None, seed=1):
+    suffix = f"_p{part[0]}" if part is not None else ""
+    out = Path(f"runs/{model}_{split}_{mode}_{cond}_s{seed}{suffix}.jsonl")
     tasks = [json.loads(l) for l in open(f"data/{split}.jsonl", encoding="utf-8")]
+    if part is not None:  # (i, n): i-th of n slices, so one batch holds the lock < 1 hour
+        i, n = part
+        k = (len(tasks) + n - 1) // n
+        tasks = tasks[i * k:(i + 1) * k]
     done = {json.loads(l)["id"] for l in open(out, encoding="utf-8")} if out.exists() else set()
     args = types.SimpleNamespace(model=model, cond=cond, mode=mode, seed=seed, port=PORT,
                                  max_turns=8, max_edits=6, keep_states=False)
@@ -53,12 +58,15 @@ def release():
         pass
     print(time.strftime("%H:%M"), "lock released", flush=True)
 
+H0, H1 = (0, 2), (1, 2)
 BATCHES = [
     ("E2B", [("dev100", "target", "S"), ("dev100", "target", "RN"), ("dev100", "target", "N")]),
-    ("E2B", [("dev100", "target", "R"), ("holdout60", "target", "S"), ("holdout60", "target", "RN"), ("dev100", "intent", "S")]),
-    ("E4B", [("dev100", "target", "S"), ("dev100", "target", "RN"), ("holdout60", "target", "S")]),
-    ("E4B", [("holdout60", "target", "RN"), ("dev100", "intent", "S"), ("dev100", "target", "N")]),
-    ("E4B", [("dev100", "target", "R")]),
+    ("E2B", [("dev100", "target", "R", H0), ("holdout60", "target", "S"), ("holdout60", "target", "RN")]),
+    ("E2B", [("dev100", "target", "R", H1), ("dev100", "intent", "S", H0), ("dev100", "intent", "S", H1)]),
+    ("E4B", [("dev100", "target", "S", H0), ("dev100", "target", "RN", H0), ("holdout60", "target", "S")]),
+    ("E4B", [("dev100", "target", "S", H1), ("dev100", "target", "RN", H1), ("holdout60", "target", "RN")]),
+    ("E4B", [("dev100", "intent", "S", H0), ("dev100", "intent", "S", H1), ("dev100", "target", "N", H0)]),
+    ("E4B", [("dev100", "target", "N", H1), ("dev100", "target", "R", H0), ("dev100", "target", "R", H1)]),
 ]
 
 if __name__ == "__main__":

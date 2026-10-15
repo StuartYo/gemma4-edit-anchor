@@ -2,7 +2,7 @@
 
 usage: python score.py runs/*.jsonl --tasks data/dev.jsonl data/holdout.jsonl --out results/summary.json
 """
-import argparse, glob, json, random
+import argparse, glob, json, random, re
 from collections import Counter, defaultdict
 import appliers as A
 from run_exp import norm
@@ -17,8 +17,8 @@ def overlaps(span, gold, pad=3):
     s, e = span
     return any(s < ge + pad and gs - pad < e for gs, ge in gold)
 
-def classify(text, old, new):
-    """Why did a strict first call fail?"""
+def classify(text, old, new, after=None):
+    """Why did a strict call fail? `after` = gold file (target mode only)."""
     r, info = A.strict(text, old, new)
     if r is not None:
         return "ok"
@@ -33,6 +33,8 @@ def classify(text, old, new):
         return "whitespace_or_indent"
     if info.get("error") == "ws_multiple":
         return "not_unique"
+    if after is not None and A.ws(after, old, "")[0] is not None:
+        return "quoted_the_target"
     _, _, ratio = A.nearest_block(text, old)
     if ratio >= 0.9:
         return "near_miss"
@@ -63,7 +65,7 @@ def summarize(logs, tasks):
             continue
         t = tasks[l["id"]]
         text = t["before"]
-        cls = classify(text, f["old"], f["new"])
+        cls = classify(text, f["old"], f["new"], t["after"] if l["mode"] == "target" else None)
         if cls != "ok":
             tax[cls] += 1
         for name, fn in A.APPLIERS.items():
@@ -80,11 +82,19 @@ def summarize(logs, tasks):
     out["first_fail_taxonomy"] = dict(tax)
     # taxonomy over every failed edit call (state saved at call time)
     allt = Counter()
+    repeats = 0
     for l in logs:
+        seen = set()
+        aft = tasks[l["id"]]["after"] if l["mode"] == "target" else None
         for c in l["calls"]:
             if c["name"] == "edit_file" and "old" in c and not c.get("applied") and c.get("before_call"):
-                allt[classify(c["before_call"], c["old"], c["new"])] += 1
+                allt[classify(c["before_call"], c["old"], c["new"], aft)] += 1
+                sig = (c["old"], c["new"])
+                if sig in seen:
+                    repeats += 1
+                seen.add(sig)
     out["all_fail_taxonomy"] = dict(allt)
+    out["repeated_identical_failed_calls"] = repeats
     out["arg_parse_errors"] = sum(l.get("parse_errors", 0) for l in logs)
     out["tasks_with_parse_error"] = sum(1 for l in logs if l.get("parse_errors"))
     out["replay_first_call"] = {k: dict(v) for k, v in replay.items()}
@@ -113,11 +123,15 @@ def main():
             t = json.loads(line); tasks[t["id"]] = t
     res = {}
     files = sorted({f for p in a.runs for f in glob.glob(p)})
+    groups = defaultdict(list)  # merge _p0/_p1 slices of the same run
     for f in files:
-        logs = [json.loads(l) for l in open(f, encoding="utf-8")]
+        name = f.replace("\\", "/").split("/")[-1].replace(".jsonl", "")
+        groups[re.sub(r"_p\d+$", "", name)].append(f)
+    for name, fs in groups.items():
+        logs = [json.loads(l) for f in fs for l in open(f, encoding="utf-8")]
         # tasks whose commit only changed trailing whitespace are not edit tasks; excluded
         logs = [l for l in logs if norm(tasks[l["id"]]["before"]) != norm(tasks[l["id"]]["after"])]
-        res[f.replace("\\", "/").split("/")[-1].replace(".jsonl", "")] = summarize(logs, tasks)
+        res[name] = summarize(logs, tasks)
     s = json.dumps(res, indent=1, ensure_ascii=False)
     if a.out:
         open(a.out, "w", encoding="utf-8").write(s)
