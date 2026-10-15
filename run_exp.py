@@ -15,7 +15,7 @@ mode:
   target : the prompt shows the lines that must appear after the edit (ground truth known)
   intent : the prompt shows only the commit subject (realistic, no ground truth)
 """
-import argparse, difflib, json, time, urllib.request
+import argparse, difflib, json, time, urllib.request, urllib.error
 from pathlib import Path
 import appliers as A
 
@@ -94,7 +94,19 @@ def error_text(cond, text, old, info):
         msg += ("\nThe closest block in the file (lines with numbers, copy it without the numbers):\n" + block)
     return msg
 
+def wait_ready(port):
+    for _ in range(600):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=5) as r:
+                if json.loads(r.read()).get("status") == "ok":
+                    return
+        except Exception:
+            pass
+        time.sleep(2)
+    raise SystemExit("server not ready")
+
 def run_task(t, args):
+    wait_ready(args.port)
     path = t["path"]
     text = t["before"]
     spans, blocks = gold_regions(t["before"], t["after"])
@@ -120,14 +132,21 @@ def run_task(t, args):
     toks = 0
     for turn in range(args.max_turns):
         resp = None
-        for attempt in range(3):
+        attempt = 0
+        while attempt < 3:
             try:
                 resp = chat(args.port, msgs, args.seed * 1000 + turn * 10 + attempt)
                 break
-            except Exception as ex:  # 500 = llama.cpp could not parse the tool call
-                log.setdefault("parse_errors", 0)
-                log["parse_errors"] += 1
-                log["error"] = repr(ex)[:300]
+            except urllib.error.HTTPError as ex:
+                if ex.code != 500:  # 503 loading etc.: not the model's fault, wait and retry
+                    time.sleep(5); wait_ready(args.port); continue
+                body = ex.read().decode("utf-8", "replace")
+                kind = "parse_errors" if "parse" in body.lower() else "server_errors"
+                log[kind] = log.get(kind, 0) + 1
+                log["error"] = body[:300]
+                attempt += 1
+            except urllib.error.URLError:
+                time.sleep(5); wait_ready(args.port); continue
         if resp is None:
             break
         log.pop("error", None)
