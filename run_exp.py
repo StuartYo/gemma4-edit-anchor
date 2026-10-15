@@ -145,7 +145,7 @@ def run_task(t, args):
                 log[kind] = log.get(kind, 0) + 1
                 log["error"] = body[:300]
                 attempt += 1
-            except urllib.error.URLError:
+            except (urllib.error.URLError, ConnectionError, TimeoutError, OSError):
                 time.sleep(5); wait_ready(args.port); continue
         if resp is None:
             break
