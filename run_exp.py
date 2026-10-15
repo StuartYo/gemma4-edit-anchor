@@ -1,0 +1,208 @@
+"""Run edit tasks against a local llama-server (OpenAI-compatible) with the
+competition's public tool signatures (read_file, edit_file).
+
+usage:
+  python run_exp.py --tasks data/dev.jsonl --model E2B --cond S --mode target \
+      --seed 1 --out runs/E2B_dev_target_S_s1.jsonl [--limit N] [--port 8091]
+
+cond:
+  S  : strict applier, harness-style error text on failure (baseline)
+  N  : strict applier, on failure the tool result also shows the nearest block
+       of the file (code-side hint), so the model can copy it
+  R  : silent repair (lineno + whitespace/indent, unique match only), else S error
+  RN : silent repair, else nearest-block hint
+mode:
+  target : the prompt shows the lines that must appear after the edit (ground truth known)
+  intent : the prompt shows only the commit subject (realistic, no ground truth)
+"""
+import argparse, difflib, json, time, urllib.request
+from pathlib import Path
+import appliers as A
+
+SYSTEM = (
+    "You are a software engineering agent working in a Python repository at /workspace. "
+    "Use the tools to make the requested change. edit_file replaces old_string with new_string; "
+    "old_string must match the file exactly, including indentation, and must occur exactly once. "
+    "Do not include line numbers in old_string or new_string. When the change is complete, reply "
+    "with a short summary and no tool call."
+)
+
+TOOLS = [
+    {"type": "function", "function": {
+        "name": "read_file",
+        "description": "Reads a file from /workspace with 1-indexed inclusive line slicing.",
+        "parameters": {"type": "object", "properties": {
+            "filepath": {"type": "string"},
+            "start_line": {"type": "integer"},
+            "end_line": {"type": "integer"}}, "required": ["filepath"]}}},
+    {"type": "function", "function": {
+        "name": "edit_file",
+        "description": "Replaces old_string with new_string in an existing non-empty file inside /workspace.",
+        "parameters": {"type": "object", "properties": {
+            "filepath": {"type": "string"},
+            "old_string": {"type": "string"},
+            "new_string": {"type": "string"},
+            "allow_multiple": {"type": "boolean"}},
+            "required": ["filepath", "old_string", "new_string"]}}},
+]
+
+def numbered(text, start=1, end=None):
+    lines = text.split("\n")
+    if text.endswith("\n"):
+        lines = lines[:-1]
+    end = len(lines) if end is None else min(end, len(lines))
+    return "\n".join(f"{i:6d}\t{lines[i - 1]}" for i in range(max(1, start), end + 1))
+
+def gold_regions(before, after):
+    """Changed line spans in `before` (0-based [s,e)) and target blocks from `after`."""
+    b, a = before.split("\n"), after.split("\n")
+    sm = difflib.SequenceMatcher(None, b, a, autojunk=False)
+    spans, blocks = [], []
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == "equal":
+            continue
+        spans.append((i1, max(i2, i1 + 1)))
+        lo, hi = max(0, j1 - 2), min(len(a), j2 + 2)
+        blocks.append("\n".join(a[lo:hi]))
+    return spans, blocks
+
+def norm(t):
+    return "\n".join(l.rstrip() for l in t.strip("\n").split("\n"))
+
+def chat(port, messages, seed, max_tokens=2048):
+    body = {"messages": messages, "tools": TOOLS, "temperature": 1.0, "top_p": 0.95,
+            "top_k": 64, "seed": seed, "max_tokens": max_tokens,
+            "chat_template_kwargs": {"enable_thinking": False}}
+    req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/chat/completions",
+                                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=900) as r:
+        return json.loads(r.read())
+
+def apply_call(cond, text, old, new):
+    if cond in ("R", "RN"):
+        return A.ws(text, old, new)
+    return A.strict(text, old, new)
+
+def error_text(cond, text, old, info):
+    e = info.get("error", "")
+    if "multiple" in e:
+        msg = f"Error: old_string occurs {info.get('n', 'several')} times in the file. Add more surrounding lines so it is unique."
+    else:
+        msg = "Error: old_string was not found in the file."
+    if cond in ("N", "RN"):
+        start, block, ratio = A.nearest_block(text, old)
+        msg += ("\nThe closest block in the file (lines with numbers, copy it without the numbers):\n" + block)
+    return msg
+
+def run_task(t, args):
+    path = t["path"]
+    text = t["before"]
+    spans, blocks = gold_regions(t["before"], t["after"])
+    if args.mode == "target":
+        target = "\n\n".join(f"--- block {i+1} ---\n{b}" for i, b in enumerate(blocks))
+        task = (f"Edit {path}. After your change, the file must contain the following lines "
+                f"(each block is shown with up to two unchanged lines of context around it):\n\n{target}\n\n"
+                "Change only what is needed to make these blocks appear.")
+    else:
+        task = f"Make this change in {path} (commit message): {t['subject']}"
+    msgs = [
+        {"role": "system", "content": SYSTEM},
+        {"role": "user", "content": task},
+        {"role": "assistant", "content": "", "tool_calls": [{"id": "c0", "type": "function",
+            "function": {"name": "read_file", "arguments": json.dumps({"filepath": path})}}]},
+        {"role": "tool", "tool_call_id": "c0", "content": numbered(text)},
+    ]
+    log = {"id": t["id"], "repo": t["repo"], "mode": args.mode, "cond": args.cond,
+           "model": args.model, "seed": args.seed, "calls": [], "turns": 0,
+           "gold_spans": spans, "n_lines": t["n_lines_before"]}
+    t0 = time.time()
+    n_edit = 0
+    toks = 0
+    for turn in range(args.max_turns):
+        resp = None
+        for attempt in range(3):
+            try:
+                resp = chat(args.port, msgs, args.seed * 1000 + turn * 10 + attempt)
+                break
+            except Exception as ex:  # 500 = llama.cpp could not parse the tool call
+                log.setdefault("parse_errors", 0)
+                log["parse_errors"] += 1
+                log["error"] = repr(ex)[:300]
+        if resp is None:
+            break
+        log.pop("error", None)
+        log["turns"] += 1
+        toks += resp.get("usage", {}).get("completion_tokens", 0)
+        m = resp["choices"][0]["message"]
+        tcs = m.get("tool_calls") or []
+        msgs.append({"role": "assistant", "content": m.get("content") or "", "tool_calls": tcs} if tcs
+                    else {"role": "assistant", "content": m.get("content") or ""})
+        if not tcs:
+            log["final_msg"] = (m.get("content") or "")[:300]
+            break
+        for tc in tcs:
+            name = tc["function"]["name"]
+            raw = tc["function"].get("arguments", "")
+            try:
+                a = json.loads(raw) if isinstance(raw, str) else raw
+            except Exception:
+                a = None
+            rec = {"turn": turn, "name": name, "raw": raw if isinstance(raw, str) else json.dumps(raw)}
+            if name == "edit_file" and isinstance(a, dict) and "old_string" in a and "new_string" in a:
+                n_edit += 1
+                before_text = text
+                res, info = apply_call(args.cond, text, a["old_string"], a["new_string"])
+                rec.update({"old": a["old_string"], "new": a["new_string"], "info": info,
+                            "text_before_call": None})
+                if res is not None:
+                    text = res
+                    out = "File edited successfully."
+                else:
+                    out = error_text(args.cond, before_text, a["old_string"], info)
+                rec["applied"] = res is not None
+                rec["state_hash"] = hash(before_text)
+                rec["before_call"] = before_text if not rec["applied"] or args.keep_states else None
+            elif name == "read_file" and isinstance(a, dict):
+                out = numbered(text, a.get("start_line") or 1, a.get("end_line"))
+            else:
+                out = "Error: invalid tool call or missing parameters."
+                rec["malformed"] = True
+            log["calls"].append(rec)
+            msgs.append({"role": "tool", "tool_call_id": tc.get("id", "x"), "content": out})
+        if n_edit >= args.max_edits:
+            break
+    log["secs"] = round(time.time() - t0, 1)
+    log["completion_tokens"] = toks
+    log["final"] = text
+    log["changed"] = norm(text) != norm(t["before"])
+    if args.mode == "target":
+        log["solved"] = norm(text) == norm(t["after"])
+    return log
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tasks"); ap.add_argument("--model"); ap.add_argument("--cond", default="S")
+    ap.add_argument("--mode", default="target"); ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--out"); ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--port", type=int, default=8091); ap.add_argument("--max-turns", type=int, default=8)
+    ap.add_argument("--max-edits", type=int, default=6); ap.add_argument("--keep-states", action="store_true")
+    args = ap.parse_args()
+    tasks = [json.loads(l) for l in open(args.tasks, encoding="utf-8")]
+    if args.limit:
+        tasks = tasks[:args.limit]
+    done = set()
+    outp = Path(args.out)
+    outp.parent.mkdir(parents=True, exist_ok=True)
+    if outp.exists():
+        done = {json.loads(l)["id"] for l in open(outp, encoding="utf-8")}
+    with open(outp, "a", encoding="utf-8") as f:
+        for i, t in enumerate(tasks):
+            if t["id"] in done:
+                continue
+            log = run_task(t, args)
+            f.write(json.dumps(log, ensure_ascii=False) + "\n"); f.flush()
+            print(i, t["id"], "solved" if log.get("solved") else ("changed" if log["changed"] else "-"),
+                  log["secs"], flush=True)
+
+if __name__ == "__main__":
+    main()
