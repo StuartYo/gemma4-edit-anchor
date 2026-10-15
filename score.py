@@ -97,7 +97,9 @@ def summarize(logs, tasks):
     out["failed_edit_calls"] = sum(1 for l in logs for c in l["calls"] if c["name"] == "edit_file" and not c.get("applied"))
     out["mean_secs"] = round(sum(l["secs"] for l in logs) / max(1, n), 1)
     out["mean_completion_tokens"] = round(sum(l["completion_tokens"] for l in logs) / max(1, n), 1)
-    out["server_errors"] = sum(1 for l in logs if l.get("error"))
+    out["server_errors"] = sum(l.get("server_errors", 0) for l in logs)
+    out["stopped_without_edit_first"] = sum(1 for l in logs if l.get("stopped_without_edit_first"))
+    out["nudged"] = sum(1 for l in logs if l.get("nudges"))
     return out
 
 def main():
