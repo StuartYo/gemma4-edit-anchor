@@ -78,12 +78,15 @@ def apply_lines(text, start, end, expected, new):
         return None, {"error": "bad_range"}
     if not (1 <= start <= n + 1 and start - 1 <= end <= n):
         return None, {"error": "bad_range", "n": n}
-    exp, _ = A.strip_lineno(expected or "")
+    # model sometimes passes a bare JSON number (e.g. a line that is just "0"); read it as that text
+    expected = "" if expected is None else (expected if isinstance(expected, str) else str(expected))
+    new = "" if new is None else (new if isinstance(new, str) else str(new))
+    exp, _ = A.strip_lineno(expected)
     exp = exp.split("\n")[0].strip()
     cur = lines[start - 1].strip() if start <= n else ""
     if exp != cur:
         return None, {"error": "anchor_mismatch"}
-    new, _ = A.strip_lineno(new or "")
+    new, _ = A.strip_lineno(new)
     nl = new.split("\n") if new != "" else []
     if nl and nl[-1] == "" and new.endswith("\n"):
         nl = nl[:-1]
