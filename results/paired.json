@@ -1,0 +1,206 @@
+{
+ "E2B_dev100_L_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 20,
+   "L": 11,
+   "only_S": 15,
+   "only_L": 6,
+   "mcnemar_p": 0.0784
+  },
+  "any_edit_applied": {
+   "S": 64,
+   "L": 77,
+   "only_S": 9,
+   "only_L": 22,
+   "mcnemar_p": 0.0294
+  }
+ },
+ "E2B_dev100_N_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 20,
+   "N": 13,
+   "only_S": 13,
+   "only_N": 6,
+   "mcnemar_p": 0.1671
+  },
+  "any_edit_applied": {
+   "S": 64,
+   "N": 63,
+   "only_S": 22,
+   "only_N": 21,
+   "mcnemar_p": 1.0
+  }
+ },
+ "E2B_dev100_RN_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 20,
+   "RN": 16,
+   "only_S": 11,
+   "only_RN": 7,
+   "mcnemar_p": 0.4807
+  },
+  "any_edit_applied": {
+   "S": 64,
+   "RN": 73,
+   "only_S": 13,
+   "only_RN": 22,
+   "mcnemar_p": 0.1755
+  }
+ },
+ "E2B_dev100_R_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 20,
+   "R": 17,
+   "only_S": 9,
+   "only_R": 6,
+   "mcnemar_p": 0.6072
+  },
+  "any_edit_applied": {
+   "S": 64,
+   "R": 74,
+   "only_S": 16,
+   "only_R": 26,
+   "mcnemar_p": 0.1641
+  }
+ },
+ "E2B_holdout60_L_vs_S": {
+  "n_paired": 60,
+  "solved": {
+   "S": 18,
+   "L": 14,
+   "only_S": 8,
+   "only_L": 4,
+   "mcnemar_p": 0.3877
+  },
+  "any_edit_applied": {
+   "S": 36,
+   "L": 56,
+   "only_S": 2,
+   "only_L": 22,
+   "mcnemar_p": 0.0
+  }
+ },
+ "E2B_holdout60_RN_vs_S": {
+  "n_paired": 60,
+  "solved": {
+   "S": 18,
+   "RN": 21,
+   "only_S": 3,
+   "only_RN": 6,
+   "mcnemar_p": 0.5078
+  },
+  "any_edit_applied": {
+   "S": 36,
+   "RN": 43,
+   "only_S": 4,
+   "only_RN": 11,
+   "mcnemar_p": 0.1185
+  }
+ },
+ "E4B_dev100_L_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 33,
+   "L": 23,
+   "only_S": 19,
+   "only_L": 9,
+   "mcnemar_p": 0.0872
+  },
+  "any_edit_applied": {
+   "S": 84,
+   "L": 89,
+   "only_S": 4,
+   "only_L": 9,
+   "mcnemar_p": 0.2668
+  }
+ },
+ "E4B_dev100_N_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 33,
+   "N": 33,
+   "only_S": 6,
+   "only_N": 6,
+   "mcnemar_p": 1.0
+  },
+  "any_edit_applied": {
+   "S": 84,
+   "N": 82,
+   "only_S": 8,
+   "only_N": 6,
+   "mcnemar_p": 0.7905
+  }
+ },
+ "E4B_dev100_RN_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 33,
+   "RN": 35,
+   "only_S": 4,
+   "only_RN": 6,
+   "mcnemar_p": 0.7539
+  },
+  "any_edit_applied": {
+   "S": 84,
+   "RN": 83,
+   "only_S": 7,
+   "only_RN": 6,
+   "mcnemar_p": 1.0
+  }
+ },
+ "E4B_dev100_R_vs_S": {
+  "n_paired": 98,
+  "solved": {
+   "S": 33,
+   "R": 33,
+   "only_S": 5,
+   "only_R": 5,
+   "mcnemar_p": 1.0
+  },
+  "any_edit_applied": {
+   "S": 84,
+   "R": 79,
+   "only_S": 6,
+   "only_R": 1,
+   "mcnemar_p": 0.125
+  }
+ },
+ "E4B_holdout60_L_vs_S": {
+  "n_paired": 60,
+  "solved": {
+   "S": 27,
+   "L": 24,
+   "only_S": 6,
+   "only_L": 3,
+   "mcnemar_p": 0.5078
+  },
+  "any_edit_applied": {
+   "S": 49,
+   "L": 60,
+   "only_S": 0,
+   "only_L": 11,
+   "mcnemar_p": 0.001
+  }
+ },
+ "E4B_holdout60_RN_vs_S": {
+  "n_paired": 60,
+  "solved": {
+   "S": 27,
+   "RN": 26,
+   "only_S": 4,
+   "only_RN": 3,
+   "mcnemar_p": 1.0
+  },
+  "any_edit_applied": {
+   "S": 49,
+   "RN": 53,
+   "only_S": 4,
+   "only_RN": 8,
+   "mcnemar_p": 0.3877
+  }
+ }
+}

@@ -173,6 +173,13 @@ def main():
         groups[re.sub(r"_p\d+$", "", name)].append(f)
     for name, fs in groups.items():
         logs = [json.loads(l) for f in fs for l in open(f, encoding="utf-8")]
+        # a model occasionally passes a bare JSON number as new_string; read it as that text,
+        # the same rule the runner applies to edit_lines arguments
+        for l in logs:
+            for c in l["calls"]:
+                for k in ("old", "new"):
+                    if k in c and c[k] is not None and not isinstance(c[k], str):
+                        c[k] = str(c[k])
         # tasks whose commit only changed trailing whitespace are not edit tasks; excluded
         logs = [l for l in logs if norm(tasks[l["id"]]["before"]) != norm(tasks[l["id"]]["after"])]
         res[name] = summarize(logs, tasks)

@@ -1,0 +1,429 @@
+{
+ "per_repo": {
+  "E2B_dev100_target_L_s1": {
+   "fastapi": {
+    "solved": 2,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 5,
+    "n": 25
+   },
+   "requests": {
+    "solved": 2,
+    "n": 25
+   },
+   "rich": {
+    "solved": 2,
+    "n": 23
+   }
+  },
+  "E2B_dev100_target_N_s1": {
+   "fastapi": {
+    "solved": 3,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 5,
+    "n": 25
+   },
+   "requests": {
+    "solved": 3,
+    "n": 25
+   },
+   "rich": {
+    "solved": 2,
+    "n": 23
+   }
+  },
+  "E2B_dev100_target_RN_s1": {
+   "fastapi": {
+    "solved": 6,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 4,
+    "n": 25
+   },
+   "requests": {
+    "solved": 4,
+    "n": 25
+   },
+   "rich": {
+    "solved": 2,
+    "n": 23
+   }
+  },
+  "E2B_dev100_target_R_s1": {
+   "fastapi": {
+    "solved": 4,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 6,
+    "n": 25
+   },
+   "requests": {
+    "solved": 2,
+    "n": 25
+   },
+   "rich": {
+    "solved": 5,
+    "n": 23
+   }
+  },
+  "E2B_dev100_target_S_s1": {
+   "fastapi": {
+    "solved": 2,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 8,
+    "n": 25
+   },
+   "requests": {
+    "solved": 6,
+    "n": 25
+   },
+   "rich": {
+    "solved": 4,
+    "n": 23
+   }
+  },
+  "E2B_holdout60_target_L_s1": {
+   "attrs": {
+    "solved": 6,
+    "n": 20
+   },
+   "click": {
+    "solved": 8,
+    "n": 20
+   },
+   "flask": {
+    "solved": 0,
+    "n": 20
+   }
+  },
+  "E2B_holdout60_target_RN_s1": {
+   "attrs": {
+    "solved": 8,
+    "n": 20
+   },
+   "click": {
+    "solved": 11,
+    "n": 20
+   },
+   "flask": {
+    "solved": 2,
+    "n": 20
+   }
+  },
+  "E2B_holdout60_target_S_s1": {
+   "attrs": {
+    "solved": 7,
+    "n": 20
+   },
+   "click": {
+    "solved": 10,
+    "n": 20
+   },
+   "flask": {
+    "solved": 1,
+    "n": 20
+   }
+  },
+  "E4B_dev100_target_L_s1": {
+   "fastapi": {
+    "solved": 8,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 7,
+    "n": 25
+   },
+   "requests": {
+    "solved": 5,
+    "n": 25
+   },
+   "rich": {
+    "solved": 3,
+    "n": 23
+   }
+  },
+  "E4B_dev100_target_N_s1": {
+   "fastapi": {
+    "solved": 8,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 10,
+    "n": 25
+   },
+   "requests": {
+    "solved": 9,
+    "n": 25
+   },
+   "rich": {
+    "solved": 6,
+    "n": 23
+   }
+  },
+  "E4B_dev100_target_RN_s1": {
+   "fastapi": {
+    "solved": 9,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 11,
+    "n": 25
+   },
+   "requests": {
+    "solved": 9,
+    "n": 25
+   },
+   "rich": {
+    "solved": 6,
+    "n": 23
+   }
+  },
+  "E4B_dev100_target_R_s1": {
+   "fastapi": {
+    "solved": 7,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 10,
+    "n": 25
+   },
+   "requests": {
+    "solved": 9,
+    "n": 25
+   },
+   "rich": {
+    "solved": 7,
+    "n": 23
+   }
+  },
+  "E4B_dev100_target_S_s1": {
+   "fastapi": {
+    "solved": 8,
+    "n": 25
+   },
+   "httpx": {
+    "solved": 10,
+    "n": 25
+   },
+   "requests": {
+    "solved": 8,
+    "n": 25
+   },
+   "rich": {
+    "solved": 7,
+    "n": 23
+   }
+  },
+  "E4B_holdout60_target_L_s1": {
+   "attrs": {
+    "solved": 8,
+    "n": 20
+   },
+   "click": {
+    "solved": 12,
+    "n": 20
+   },
+   "flask": {
+    "solved": 4,
+    "n": 20
+   }
+  },
+  "E4B_holdout60_target_RN_s1": {
+   "attrs": {
+    "solved": 12,
+    "n": 20
+   },
+   "click": {
+    "solved": 10,
+    "n": 20
+   },
+   "flask": {
+    "solved": 4,
+    "n": 20
+   }
+  },
+  "E4B_holdout60_target_S_s1": {
+   "attrs": {
+    "solved": 11,
+    "n": 20
+   },
+   "click": {
+    "solved": 12,
+    "n": 20
+   },
+   "flask": {
+    "solved": 4,
+    "n": 20
+   }
+  }
+ },
+ "by_year": {
+  "E2B": {
+   "pre2025": {
+    "n": 146,
+    "solved": 37,
+    "first_call_ok": 69
+   },
+   "from2025": {
+    "n": 12,
+    "solved": 1,
+    "first_call_ok": 4
+   },
+   "fisher_p_solved": 0.2959,
+   "fisher_p_first_call_ok": 0.3864
+  },
+  "E4B": {
+   "pre2025": {
+    "n": 146,
+    "solved": 56,
+    "first_call_ok": 103
+   },
+   "from2025": {
+    "n": 12,
+    "solved": 4,
+    "first_call_ok": 8
+   },
+   "fisher_p_solved": 1.0,
+   "fisher_p_first_call_ok": 0.7512
+  }
+ },
+ "seed_pairs": {
+  "E2B_dev100_S": {
+   "n_paired": 98,
+   "solved": {
+    "s1": 20,
+    "s2": 16,
+    "only_s1": 12,
+    "only_s2": 8,
+    "mcnemar_p": 0.5034
+   },
+   "any_edit_applied": {
+    "s1": 64,
+    "s2": 51,
+    "only_s1": 23,
+    "only_s2": 10,
+    "mcnemar_p": 0.0351
+   },
+   "first_call_ok": {
+    "s1": 42,
+    "s2": 41,
+    "only_s1": 17,
+    "only_s2": 16,
+    "mcnemar_p": 1.0
+   }
+  },
+  "E2B_dev100_L": {
+   "n_paired": 98,
+   "solved": {
+    "s1": 11,
+    "s2": 18,
+    "only_s1": 6,
+    "only_s2": 13,
+    "mcnemar_p": 0.1671
+   },
+   "any_edit_applied": {
+    "s1": 77,
+    "s2": 77,
+    "only_s1": 16,
+    "only_s2": 16,
+    "mcnemar_p": 1.0
+   },
+   "first_call_ok": {
+    "s1": 56,
+    "s2": 54,
+    "only_s1": 28,
+    "only_s2": 26,
+    "mcnemar_p": 0.8919
+   }
+  }
+ },
+ "L": {
+  "E2B_dev100_target_L_s1": {
+   "edit_lines_calls": 224,
+   "applied": 90,
+   "errors": {
+    "anchor_mismatch": 117,
+    "bad_range": 17
+   },
+   "other_tool_calls": 0
+  },
+  "E2B_dev100_target_L_s2": {
+   "edit_lines_calls": 216,
+   "applied": 101,
+   "errors": {
+    "anchor_mismatch": 105,
+    "bad_range": 10
+   },
+   "other_tool_calls": 0
+  },
+  "E2B_holdout60_target_L_s1": {
+   "edit_lines_calls": 135,
+   "applied": 64,
+   "errors": {
+    "anchor_mismatch": 67,
+    "bad_range": 4
+   },
+   "other_tool_calls": 0
+  },
+  "E4B_dev100_target_L_s1": {
+   "edit_lines_calls": 269,
+   "applied": 116,
+   "errors": {
+    "anchor_mismatch": 146,
+    "bad_range": 7
+   },
+   "other_tool_calls": 0
+  },
+  "E4B_holdout60_target_L_s1": {
+   "edit_lines_calls": 146,
+   "applied": 86,
+   "errors": {
+    "anchor_mismatch": 52,
+    "bad_range": 8
+   },
+   "other_tool_calls": 0
+  }
+ },
+ "applied_not_solved_line_count": {
+  "E2B_dev100_target_L_s1": {
+   "applied_not_solved": 66,
+   "line_count_differs": 63
+  },
+  "E2B_dev100_target_S_s1": {
+   "applied_not_solved": 44,
+   "line_count_differs": 36
+  },
+  "E2B_holdout60_target_L_s1": {
+   "applied_not_solved": 42,
+   "line_count_differs": 38
+  },
+  "E2B_holdout60_target_S_s1": {
+   "applied_not_solved": 18,
+   "line_count_differs": 15
+  },
+  "E4B_dev100_target_L_s1": {
+   "applied_not_solved": 66,
+   "line_count_differs": 58
+  },
+  "E4B_dev100_target_S_s1": {
+   "applied_not_solved": 51,
+   "line_count_differs": 46
+  },
+  "E4B_holdout60_target_L_s1": {
+   "applied_not_solved": 36,
+   "line_count_differs": 35
+  },
+  "E4B_holdout60_target_S_s1": {
+   "applied_not_solved": 22,
+   "line_count_differs": 17
+  }
+ }
+}
