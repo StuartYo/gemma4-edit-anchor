@@ -12,6 +12,7 @@ Short answer (158 scored tasks from seven Python repositories): the first `edit_
 |---|---|
 | `build_tasks.py` | Builds single-file edit tasks from public git history (1 to 3 hunks, 1 to 20 changed lines, 30 to 800-line file). Deterministic seed. |
 | `data/dev100.jsonl`, `data/holdout60.jsonl` | The task sets used in the paper (rich, requests, httpx, fastapi / click, flask, attrs). `data/dev.jsonl` and `data/holdout.jsonl` are the 320-task pool they were cut from (first 25 / 20 per repository). |
+| `cut_splits.py` | Cuts `dev100` / `holdout60` from the pools (first 25 / 20 tasks per repository). |
 | `appliers.py` | Edit appliers: `strict` (competition semantics), `lineno`, `ws` (unique whitespace/indent-tolerant match), `fuzzy` (difflib >= 0.8, for comparison only), plus `nearest_block` for the hint. |
 | `run_exp.py` | Agent loop against a local llama.cpp server with the competition's tool signatures. Conditions S, N, R, RN, L. |
 | `driver.py`, `start_driver.py` | Runs the experiment queue in batches (`driver.BATCHES`); `start_driver.py` launches it as a detached background process on Windows. |
@@ -28,10 +29,23 @@ Short answer (158 scored tasks from seven Python repositories): the first `edit_
 Steps 1 and 3 need no GPU. Rescoring the saved transcripts takes about 12 minutes on a laptop CPU (mostly the fuzzy replay).
 
 ```
-# 1. tasks (needs the seven repos cloned under <repos_dir>)
-python build_tasks.py <repos_dir> data/dev.jsonl 50 rich requests httpx fastapi
-python build_tasks.py <repos_dir> data/holdout.jsonl 40 click flask attrs
+# 1. tasks: clone the seven repositories at the commits used (build_tasks.py reads their full history)
+mkdir repos && cd repos
+git clone https://github.com/Textualize/rich.git    && git -C rich     checkout 9d8f9a372cc5916fd4781fec207ced7ddac2f08f
+git clone https://github.com/psf/requests.git       && git -C requests checkout 611c6162cbc4ac2020a2f91c7cfa4f3abf9bbb60
+git clone https://github.com/encode/httpx.git       && git -C httpx    checkout b5addb64f0161ff6bfe94c124ef76f6a1fba5254
+git clone https://github.com/fastapi/fastapi.git    && git -C fastapi  checkout 49a09a0d4e876b4e7d6d87fc049710263aaeaa7e
+git clone https://github.com/pallets/click.git      && git -C click    checkout 2247b35ea1c47c727d7a06e51fa280e12a863ff6
+git clone https://github.com/pallets/flask.git      && git -C flask    checkout d086db856be187255b8ec61ef409357393020f32
+git clone https://github.com/python-attrs/attrs.git && git -C attrs    checkout ee66e7274852438cc23d4240a1a9cd632fda8b52
+cd ..
+python build_tasks.py repos data/dev.jsonl 50 rich requests httpx fastapi     # 200-task pool (order matters: one seeded RNG)
+python build_tasks.py repos data/holdout.jsonl 40 click flask attrs           # 120-task pool
+python cut_splits.py data/dev.jsonl data/dev100.jsonl 25                      # first 25 per repository, in file order
+python cut_splits.py data/holdout.jsonl data/holdout60.jsonl 20               # first 20 per repository
 python positive_control.py data/dev.jsonl data/holdout.jsonl
+#    Rebuilding from these commits reproduces data/dev.jsonl and data/holdout.jsonl in the same order,
+#    and cut_splits.py reproduces dev100.jsonl and holdout60.jsonl byte for byte.
 
 # 2. model runs
 #    llama.cpp b11215 (Windows, Vulkan) and google/gemma-4-E2B-it-qat-q4_0-gguf, google/gemma-4-E4B-it-qat-q4_0-gguf.
@@ -58,7 +72,7 @@ Generation with three parallel server slots is not bitwise reproducible even wit
 - No Kaggle competition data is used or included. Tasks are rebuilt from public git history; see `THIRD_PARTY.md` for licenses.
 - Two development commits only change trailing whitespace; the scorer excludes them (98 development tasks are scored).
 - Tool calls go through llama.cpp's Gemma 4 chat template and tool-call parser, not the competition's vLLM parser. Calls whose arguments the parser could not read are counted separately (`arg_parse_errors`).
-- When a model passes a bare JSON number as a text argument, the runner (for `edit_lines`) and the scorer (for `edit_file`) read it as that text.
+- Two operational changes were made during the runs (see `runs/driver.log`). (a) From 2026-10-18 01:12, `llama-server` ran from a copy of the b11215 binary whose PE header stack reserve was raised from 1 MB to 256 MB (`tools/set_stack_reserve.py`; the copy differs from the stock file in two bytes), because long tool-call outputs overflowed the default stack (exit 0xC00000FD). Code, model, context, slots and sampling were unchanged. The driver auto-restarts the server and resends the same turn; after the change the server did not crash again. Before it, a crash stopped the driver and the unfinished task was rerun from the start. (b) During the E4B L runs, a bare JSON number passed as `expected_first_line` or `new_content` crashed the driver; it is now read as that text. This only affects the task that crashed (`httpx_50b17fdd65`, E4B dev L, rerun from the start). The scorer applies the same rule to one `edit_file` argument (`fastapi_570e592a03`, E4B intent).
 - Condition L was added after the E2B development results of the other conditions and is exploratory.
 - AI use: the author chose the topic and decided to enter. Claude (Anthropic's AI model) did most of the experiment design, harness code, running, analysis and writing. The author reviewed and approved the results and the final text.
 

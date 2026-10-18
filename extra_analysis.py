@@ -97,6 +97,22 @@ def main():
                           "applied": sum(1 for c in calls if c.get("applied")),
                           "errors": dict(Counter(c["info"].get("error") for c in calls if not c.get("applied"))),
                           "other_tool_calls": sum(1 for l in logs.values() for c in l["calls"] if c["name"] not in ("edit_lines", "read_file"))}
+    # paired difference in solved tasks (condition minus S): 95% bootstrap CI over tasks, and the
+    # smallest difference an exact McNemar test would detect with ~80% power at these discordant counts
+    out["paired_diff"] = {}
+    rng = __import__("random").Random(0)
+    for name, logs in sorted(runs.items()):
+        m = re.match(r"(E\dB)_(\w+?)_target_(\w+)_s1$", name)
+        if not m or m.group(3) == "S":
+            continue
+        base = runs.get(f"{m.group(1)}_{m.group(2)}_target_S_s1")
+        ids = sorted(set(base) & set(logs))
+        d = [int(bool(logs[i].get("solved"))) - int(bool(base[i].get("solved"))) for i in ids]
+        boots = sorted(sum(rng.choice(d) for _ in d) for _ in range(2000))
+        disc = sum(1 for x in d if x)
+        out["paired_diff"][name] = {"n": len(d), "diff": sum(d), "ci95": [boots[50], boots[1949]],
+                                    "discordant": disc, "mde80_tasks": round(2.8 * math.sqrt(disc), 1)}
+
     # among episodes where an edit applied but the task was not solved: how often does the final
     # file have a different number of lines than the gold file (lines dropped or duplicated)?
     out["applied_not_solved_line_count"] = {}

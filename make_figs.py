@@ -29,20 +29,21 @@ def fig1():
                              (axes[1], "holdout60", "Held-out repositories (60 tasks)")]:
         present = [(c, lab) for c, lab in conds if any(S.get(key(m, split, "target", c)) for m in ("E2B", "E4B"))]
         for mi, (model, color) in enumerate([("E2B", BLUE), ("E4B", ORANGE)]):
-            xs, ys, lo, hi = [], [], [], []
+            xs, ys, lo, hi, cnt = [], [], [], [], []
             for ci, (c, _) in enumerate(present):
                 r = S.get(key(model, split, "target", c))
                 if not r:
                     continue
                 xs.append(ci + (mi - 0.5) * 0.36)
                 ys.append(r["solved_rate"] * 100)
+                cnt.append(f"{r['solved']}/{r['n']}")
                 lo.append((r["solved_rate"] - r["solved_ci95"][0]) * 100)
                 hi.append((r["solved_ci95"][1] - r["solved_rate"]) * 100)
             if xs:
                 ax.bar(xs, ys, width=0.34, color=color, label=f"Gemma 4 {model}", edgecolor="white", linewidth=2)
                 ax.errorbar(xs, ys, yerr=[lo, hi], fmt="none", ecolor=INK2, elinewidth=1, capsize=3)
-                for x, y in zip(xs, ys):
-                    ax.text(x, 1.5, f"{y:.0f}", ha="center", va="bottom", fontsize=8, color="white", weight="bold")
+                for x, k in zip(xs, cnt):  # task counts, e.g. 20/98; the axis is percent
+                    ax.text(x, 1.2, k, ha="center", va="bottom", fontsize=6.5, color="white", weight="bold", rotation=90)
             base = S.get(key(model, split, "target", "S"))
             if base:
                 ax.axhline(base["solved_rate"] * 100, color=color, lw=0.8, ls="--", alpha=0.6)

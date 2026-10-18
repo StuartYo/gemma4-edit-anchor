@@ -392,6 +392,128 @@
    "other_tool_calls": 0
   }
  },
+ "paired_diff": {
+  "E2B_dev100_target_L_s1": {
+   "n": 98,
+   "diff": -9,
+   "ci95": [
+    -18,
+    0
+   ],
+   "discordant": 21,
+   "mde80_tasks": 12.8
+  },
+  "E2B_dev100_target_N_s1": {
+   "n": 98,
+   "diff": -7,
+   "ci95": [
+    -16,
+    1
+   ],
+   "discordant": 19,
+   "mde80_tasks": 12.2
+  },
+  "E2B_dev100_target_RN_s1": {
+   "n": 98,
+   "diff": -4,
+   "ci95": [
+    -12,
+    4
+   ],
+   "discordant": 18,
+   "mde80_tasks": 11.9
+  },
+  "E2B_dev100_target_R_s1": {
+   "n": 98,
+   "diff": -3,
+   "ci95": [
+    -10,
+    5
+   ],
+   "discordant": 15,
+   "mde80_tasks": 10.8
+  },
+  "E2B_holdout60_target_L_s1": {
+   "n": 60,
+   "diff": -4,
+   "ci95": [
+    -11,
+    2
+   ],
+   "discordant": 12,
+   "mde80_tasks": 9.7
+  },
+  "E2B_holdout60_target_RN_s1": {
+   "n": 60,
+   "diff": 3,
+   "ci95": [
+    -2,
+    9
+   ],
+   "discordant": 9,
+   "mde80_tasks": 8.4
+  },
+  "E4B_dev100_target_L_s1": {
+   "n": 98,
+   "diff": -10,
+   "ci95": [
+    -20,
+    0
+   ],
+   "discordant": 28,
+   "mde80_tasks": 14.8
+  },
+  "E4B_dev100_target_N_s1": {
+   "n": 98,
+   "diff": 0,
+   "ci95": [
+    -7,
+    7
+   ],
+   "discordant": 12,
+   "mde80_tasks": 9.7
+  },
+  "E4B_dev100_target_RN_s1": {
+   "n": 98,
+   "diff": 2,
+   "ci95": [
+    -4,
+    8
+   ],
+   "discordant": 10,
+   "mde80_tasks": 8.9
+  },
+  "E4B_dev100_target_R_s1": {
+   "n": 98,
+   "diff": 0,
+   "ci95": [
+    -6,
+    7
+   ],
+   "discordant": 10,
+   "mde80_tasks": 8.9
+  },
+  "E4B_holdout60_target_L_s1": {
+   "n": 60,
+   "diff": -3,
+   "ci95": [
+    -9,
+    2
+   ],
+   "discordant": 9,
+   "mde80_tasks": 8.4
+  },
+  "E4B_holdout60_target_RN_s1": {
+   "n": 60,
+   "diff": -1,
+   "ci95": [
+    -6,
+    4
+   ],
+   "discordant": 7,
+   "mde80_tasks": 7.4
+  }
+ },
  "applied_not_solved_line_count": {
   "E2B_dev100_target_L_s1": {
    "applied_not_solved": 66,
