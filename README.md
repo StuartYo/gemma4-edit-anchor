@@ -4,7 +4,7 @@ Code, data and every raw model transcript behind the paper **Fixing the Quote Di
 
 The question: when a small Gemma 4 model (E2B or E4B, 4-bit QAT, on a 6 GB laptop GPU) drives a coding agent through the competition's `edit_file(filepath, old_string, new_string)` tool, how often does the exact-match `old_string` fail, why, and what do the usual repairs buy and cost?
 
-Short answer (158 scored tasks from seven Python repositories): the first `edit_file` call matched exactly in 46% (E2B) and 70% (E4B) of tasks; most rejected quotes were near misses or partial rewrites, not copy errors; none of silent repair, a nearest-block hint, both, or a line-range tool raised exact task success over strict matching.
+Short answer (158 scored tasks from seven Python repositories): the first `edit_file` call matched exactly in 46% (E2B) and 70% (E4B) of tasks; most rejected quotes were near misses or partial rewrites, not copy errors; none of silent repair, a nearest-block hint, both, or a line-range tool raised exact task success over strict matching by more than seed noise.
 
 ## What is here
 
