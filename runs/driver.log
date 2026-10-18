@@ -69,3 +69,119 @@ ConnectionResetError: [WinError 10054] 遠端主機已強制關閉一個現存�
 13:44 batch 0 done
 13:53 lock acquired
 15:32 done E2B dev100 target R
+15:35 restart single driver: 1 2 9 7 3 4 8 5 6
+15:36 lock acquired
+08:55 lock acquired
+08:56 done E2B dev100 target R
+09:19 done E2B holdout60 target S
+09:23 done E2B holdout60 target RN
+09:23 lock released
+09:23 batch 1 done
+09:24 lock acquired
+09:59 done E2B dev100 intent S
+10:03 done E2B dev100 intent S
+10:03 done E2B dev100 target R
+10:03 lock released
+10:03 batch 2 done
+10:05 lock acquired
+Traceback (most recent call last):
+  File "E:\projects\gemma4-edit-anchor\driver.py", line 81, in <module>
+    acquire()
+  File "E:\projects\gemma4-edit-anchor\driver.py", line 47, in acquire
+    with open(LOCK, "x", encoding="utf-8") as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'E:\\_tmp_claude\\render.lock'
+10:34 restart durable driver via WMI: 9 7 3 4 8 5 6
+10:35 restart durable driver #2 (lock PermissionError patched)
+10:35 lock acquired
+10:46 done E2B dev100 target S
+10:50 done E2B dev100 target S
+11:05 done E2B dev100 target L
+11:05 lock released
+11:05 batch 9 done
+11:51 lock acquired
+^C16:48 restart durable driver #3: 7 3 4 8 5 6 (also waits on E:/lyric-pv/render.lock)
+16:51 lock acquired
+21:02 restart durable driver #4 after reboot: 7 3 4 8 5 6 (stale lock cleared)
+21:02 lock acquired
+22:38 restart #5 (driver died silently after 21:02 lock; running attached to see errors)
+22:38 lock acquired
+23:19 lock released
+23:20 watchdog run 1: 7 3 4 8 5 6
+23:20 lock acquired
+23:51 llama-server died ~23:21 (AMD 助手 Stop-Process 誤殺)；手動結束 driver PID 13204 讓 watchdog 立刻重跑
+23:51 watchdog run 2: 7 3 4 8 5 6
+23:51 lock acquired
+00:33 lock released
+00:33 watchdog run 3: 7 3 4 8 5 6
+00:33 lock acquired
+01:03 watchdog 停止：llama-server 每次啟動約 50 秒自己當掉（非外部砍），交給除錯助手
+01:12 除錯結論：llama-server 結束代碼 0xC00000FD（stack overflow，llama-common.dll；事件記錄 10-17 16:53 APPCRASH）。原因：模型輸出很長的 edit_lines 工具呼叫字串時，b11215 解析器遞迴用光 1 MB 執行緒堆疊。單一請求可重現（httpx_956129fbf7 第一輪）。
+01:12 修正：改用 E:\tools\llama.cpp\b11215\llama-server-stack256m.exe（同一 b11215 檔案，只把 PE 標頭 SizeOfStackReserve 1 MB→256 MB；DLL、模型、-c 49152 -ngl 99 -np 3 --cache-ram 512 --jinja、取樣參數全不變）；driver 加 watchdog：server 若結束就用同參數重啟，run_exp 重送同一輪，不跳題。
+2026/10/18 Sun   1:12:21.42 start_driver.cmd: 7 3 4 8 5 6 
+01:12 lock acquired
+01:13 start_driver.py: 7 3 4 8 5 6
+01:13 lock acquired
+01:33 done E2B holdout60 target L
+01:35 done E2B dev100 target L
+01:37 done E2B dev100 target L
+01:37 lock released
+01:37 batch 7 done
+01:39 lock acquired
+02:19 done E4B dev100 target S
+02:19 done E4B dev100 target RN
+02:19 done E4B holdout60 target S
+02:19 lock released
+02:19 batch 3 done
+02:21 lock acquired
+02:50 done E4B dev100 target S
+02:53 done E4B holdout60 target RN
+02:55 done E4B dev100 target RN
+02:55 lock released
+02:55 batch 4 done
+02:56 lock acquired
+03:34 done E4B holdout60 target L
+03:36 done E4B dev100 target L
+03:36 lock released
+03:37 03:36 driver 因 Python 例外退出（edit_lines 的 expected_first_line 是數字 → strip_lineno 對 int 呼叫 split）。修正：apply_lines 把數字參數當成文字；driver 單題 harness 例外記 HARNESS_ERROR 後跳過該題、不中斷批次。重啟剩餘批次。
+03:37 start_driver.py: 8 5 6
+03:37 lock acquired
+03:37 done E4B dev100 target L
+03:37 done E4B holdout60 target L
+04:52 done E4B dev100 target L
+04:52 lock released
+04:52 batch 8 done
+04:54 lock acquired
+05:21 done E4B dev100 intent S
+05:34 done E4B dev100 intent S
+05:35 done E4B dev100 target N
+05:35 lock released
+05:35 batch 5 done
+05:37 lock acquired
+06:07 done E4B dev100 target R
+06:10 done E4B dev100 target N
+06:14 done E4B dev100 target R
+06:14 lock released
+06:14 batch 6 done
+ALLDONE
+06:19 看門狗：driver 18340 已不在，重啟第 1 次
+06:19 start_driver.py: 8 5 6
+06:19 lock acquired
+06:19 done E4B holdout60 target L
+06:19 done E4B dev100 target L
+06:19 done E4B dev100 target L
+06:19 lock released
+06:19 batch 8 done
+06:20 lock acquired
+06:20 done E4B dev100 intent S
+06:20 done E4B dev100 target N
+06:20 done E4B dev100 intent S
+06:20 lock released
+06:20 batch 5 done
+06:22 lock acquired
+06:22 done E4B dev100 target R
+06:22 done E4B dev100 target R
+06:22 done E4B dev100 target N
+06:22 lock released
+06:22 batch 6 done
+ALLDONE
